@@ -14,13 +14,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.umbrellastella.dickalogistics.viewmodel.LoginState
+import com.umbrellastella.dickalogistics.viewmodel.LoginViewModel
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    viewModel: LoginViewModel = viewModel(), // Instanciamos el cerebro
+    onLoginSuccess: () -> Unit // Función que se ejecuta si hay éxito
+) {
     var usuario by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
 
-    // Fondo general (Usamos el color claro que definimos antes)
+    // Observamos el estado del ViewModel
+    val state by viewModel.loginState.collectAsState()
+
+    // Si el estado cambia a Success, disparamos la navegación
+    LaunchedEffect(state) {
+        if (state is LoginState.Success) {
+            onLoginSuccess()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -28,7 +43,6 @@ fun LoginScreen() {
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Tarjeta blanca para el formulario de login
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -41,88 +55,73 @@ fun LoginScreen() {
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Título corporativo en Azul
                 Text(
                     text = "DICKA",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.primary, // Azul corporativo
+                    color = MaterialTheme.colorScheme.primary,
                     letterSpacing = 2.sp
                 )
                 Text(
                     text = "LOGISTICS",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.secondary, // Gris-azulado o un azul más claro
+                    color = MaterialTheme.colorScheme.secondary,
                     letterSpacing = 4.sp,
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
 
-                // Input de Usuario
                 OutlinedTextField(
                     value = usuario,
                     onValueChange = { usuario = it },
                     label = { Text("Usuario o Correo") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = "Email Icon",
-                            tint = MaterialTheme.colorScheme.primary // Icono en azul
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary
-                    )
+                    singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Input de Contraseña
                 OutlinedTextField(
                     value = contrasena,
                     onValueChange = { contrasena = it },
                     label = { Text("Contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Lock Icon",
-                            tint = MaterialTheme.colorScheme.primary // Icono en azul
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     visualTransformation = PasswordVisualTransformation(),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary
-                    )
+                    singleLine = true
                 )
+
+                // Mostrar mensaje de error si la contraseña está mal
+                if (state is LoginState.Error) {
+                    Text(
+                        text = (state as LoginState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Botón Azul con texto Blanco
                 Button(
-                    onClick = { /* Aquí irá la lógica para conectar a Laravel [cite: 305] */ },
+                    onClick = {
+                        // Le decimos al ViewModel que intente conectarse al backend
+                        viewModel.hacerLogin(usuario, contrasena)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary, // Botón azul
-                        contentColor = MaterialTheme.colorScheme.background // Texto blanco
-                    )
+                    // Si está cargando, deshabilitamos el botón
+                    enabled = state !is LoginState.Loading
                 ) {
-                    Text(
-                        text = "ENTRAR",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
+                    if (state is LoginState.Loading) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.background, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(text = "ENTRAR", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
                 }
             }
         }

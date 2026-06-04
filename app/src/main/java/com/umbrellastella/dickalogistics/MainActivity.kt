@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.umbrellastella.dickalogistics.ui.theme.DickaLogisticsTheme
 import com.umbrellastella.dickalogistics.ui.theme.LoginScreen
 import com.umbrellastella.dickalogistics.ui.theme.SplashScreen
+import com.umbrellastella.dickalogistics.home.InicioScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,11 +45,23 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("login") {
-                            LoginScreen()
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    // Viajamos a inicio y destruimos el login del historial
+                                    // para que al darle "Atrás", no regrese a la pantalla de login
+                                    navController.navigate("inicio") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                }
+                            )
                         }
+
+                        composable("inicio") {
+                            InicioScreen()
+                        }
+                    }
                     }
                 }
             }
         }
     }
-}
