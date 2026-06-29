@@ -15,3 +15,12 @@ data class UsuarioBackend(
     val numEmpleado: Int,
     val rol_id: Int
 )
+
+object SesionUsuario {
+    // Esto se actualizará dinámicamente cuando el login sea exitoso.
+    // Por ahora, puedes cambiar este string manualmente para probar ("Administrador", "Montacarguista", etc.)
+    var rolActual: String = "Administrador"
+    var tokenClave: String? = null
+
+
+}

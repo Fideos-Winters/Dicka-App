@@ -3,6 +3,7 @@ package com.umbrellastella.dickalogistics.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.umbrellastella.dickalogistics.data.AuthRepository
+import com.umbrellastella.dickalogistics.data.SesionUsuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -35,8 +36,17 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             val resultado = repository.iniciarSesion(usuario, contrasena)
 
+
             if (resultado.isSuccess) {
                 // ¡Todo chido! El token y los datos ya están en el resultado
+                val cuerpoRespuesta = resultado.getOrNull()
+                SesionUsuario.tokenClave = cuerpoRespuesta?.token
+                SesionUsuario.rolActual = when (cuerpoRespuesta?.usuario?.rol_id) {
+                    1 -> "Administrador"
+                    2 -> "Montacarguista"
+                    else -> "Auxiliar"
+                }
+
                 _loginState.value = LoginState.Success
             } else {
                 // Hubo un error (credenciales incorrectas o servidor caído)
