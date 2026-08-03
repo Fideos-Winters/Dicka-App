@@ -1,0 +1,188 @@
+package com.umbrellastella.dickalogistics.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.umbrellastella.dickalogistics.viewmodel.DashboardUiState
+import com.umbrellastella.dickalogistics.viewmodel.DashboardViewModel
+import com.umbrellastella.dickalogistics.ui.theme.DickaBlue
+import com.umbrellastella.dickalogistics.ui.theme.DickaOrange
+import com.umbrellastella.dickalogistics.ui.theme.DickaLightBackground
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DashboardScreen(viewModel: DashboardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "DICKA LOGISTICS",
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = DickaBlue)
+            )
+        },
+        containerColor = DickaLightBackground
+    ) { paddingValues ->
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (val state = viewModel.uiState) {
+                is DashboardUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = DickaOrange
+                    )
+                }
+
+                is DashboardUiState.Success -> {
+                    val datos = state.datos
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "Resumen de Almacén",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = DickaBlue,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Card(
+                                    modifier = Modifier.weight(1f),
+                                    colors = CardDefaults.cardColors(containerColor = DickaBlue),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Total Piezas", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("${datos.totalPiezasAlmacen}", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                Card(
+                                    modifier = Modifier.weight(1f),
+                                    colors = CardDefaults.cardColors(containerColor = DickaOrange),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Ubicaciones", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("${datos.ubicacionesOcupadas} QR", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            Text(
+                                text = "Productos en Almacén",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = DickaBlue,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        items(datos.productosEnAlmacen) { producto ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(2.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = producto.producto,
+                                            color = DickaBlue,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "SKU: ${producto.sku} | Lote: ${producto.lote}",
+                                            color = Color.Gray,
+                                            fontSize = 13.sp
+                                        )
+                                        Text(
+                                            text = "Ubicación: ${producto.ubicacion}",
+                                            color = DickaBlue,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .background(DickaLightBackground, RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "${producto.piezas} pzs",
+                                            color = DickaOrange,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                is DashboardUiState.Error -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(text = state.mensaje, color = Color.Red, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { viewModel.cargarDatosDelDashboard() },
+                            colors = ButtonDefaults.buttonColors(containerColor = DickaOrange),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Reintentar Conexión", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

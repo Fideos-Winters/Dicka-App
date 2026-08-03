@@ -11,9 +11,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.umbrellastella.dickalogistics.ui.theme.DickaLogisticsTheme
-import com.umbrellastella.dickalogistics.ui.theme.LoginScreen
+import com.umbrellastella.dickalogistics.ui.screens.LoginScreen
 import com.umbrellastella.dickalogistics.ui.theme.SplashScreen
-import com.umbrellastella.dickalogistics.home.InicioScreen
+import com.umbrellastella.dickalogistics.ui.navigation.MainScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,20 +24,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Controlador oficial de navegación
                     val navController = rememberNavController()
 
-                    // Mapa de rutas (NavHost)
                     NavHost(
                         navController = navController,
-                        startDestination = "splash" // Inicia en el Splash
+                        startDestination = "splash"
                     ) {
-
                         composable("splash") {
                             SplashScreen(
                                 onNavigateToLogin = {
                                     navController.navigate("login") {
-                                        // Esto borra el splash del historial para que al dar "Atrás", la app se cierre
                                         popUpTo("splash") { inclusive = true }
                                     }
                                 }
@@ -47,21 +43,20 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onLoginSuccess = {
-                                    // Viajamos a inicio y destruimos el login del historial
-                                    // para que al darle "Atrás", no regrese a la pantalla de login
-                                    navController.navigate("inicio") {
+                                    navController.navigate("main_app") {
                                         popUpTo("login") { inclusive = true }
                                     }
                                 }
                             )
                         }
 
-                        composable("inicio") {
-                            InicioScreen()
+                        composable("main_app") {
+                            // Carga el contenedor unificado que administra los submódulos (Inventario, Entradas, etc.)
+                            MainScreen(userRole = "ADMIN")
                         }
-                    }
                     }
                 }
             }
         }
     }
+}

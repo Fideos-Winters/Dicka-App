@@ -1,10 +1,10 @@
-package com.umbrellastella.dickalogistics.ui.theme
+package com.umbrellastella.dickalogistics.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,16 +20,14 @@ import com.umbrellastella.dickalogistics.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = viewModel(), // Instanciamos el cerebro
-    onLoginSuccess: () -> Unit // Función que se ejecuta si hay éxito
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit
 ) {
     var usuario by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
 
-    // Observamos el estado del ViewModel
     val state by viewModel.loginState.collectAsState()
 
-    // Si el estado cambia a Success, disparamos la navegación
     LaunchedEffect(state) {
         if (state is LoginState.Success) {
             onLoginSuccess()
@@ -74,8 +72,8 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = usuario,
                     onValueChange = { usuario = it },
-                    label = { Text("Usuario o Correo") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    label = { Text("Nombre de Usuario") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -94,7 +92,6 @@ fun LoginScreen(
                     singleLine = true
                 )
 
-                // Mostrar mensaje de error si la contraseña está mal
                 if (state is LoginState.Error) {
                     Text(
                         text = (state as LoginState.Error).message,
@@ -107,18 +104,19 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        // Le decimos al ViewModel que intente conectarse al backend
                         viewModel.hacerLogin(usuario, contrasena)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    // Si está cargando, deshabilitamos el botón
                     enabled = state !is LoginState.Loading
                 ) {
                     if (state is LoginState.Loading) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.background, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.size(24.dp)
+                        )
                     } else {
                         Text(text = "ENTRAR", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
