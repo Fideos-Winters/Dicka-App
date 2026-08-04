@@ -123,7 +123,7 @@ interface DickaApiService {
         @Query("lote") lote: String? = null,
         @Query("folio") folio: Int? = null,
         @Query("page") page: Int? = 1,
-        @Query("estado") estado: String? = "ubicados" // 👈 "ubicados" o "no_ubicados"
+        @Query("estado") estado: String? = "ubicados"
     ): Response<LoteRespuestaModel>
 
     @Streaming // <-- Evita que la app se quede sin memoria (OutOfMemory)

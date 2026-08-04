@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ExitToApp // Importante para el icono de salida
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +26,11 @@ import com.umbrellastella.dickalogistics.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(userRole: String = "ADMIN") {
+fun MainScreen(
+    userRole: String = "ADMIN",
+    loginViewModel: LoginViewModel = viewModel(), // 1️⃣ Inyectamos el ViewModel de Login
+    onLogoutSuccess: () -> Unit // 2️⃣ Avisamos al NavHost que nos mande al Login
+) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Inventario) }
     var userMenuExpanded by remember { mutableStateOf(false) }
     var selectedProducto by remember { mutableStateOf<ProductoModel?>(null) }
@@ -56,6 +61,20 @@ fun MainScreen(userRole: String = "ADMIN") {
                                     onClick = { currentScreen = Screen.Usuarios; userMenuExpanded = false }
                                 )
                             }
+
+                            Divider() // Una línea sutil para separar la salida
+
+                            DropdownMenuItem(
+                                text = { Text("Cerrar Sesión", color = Color.Red, fontWeight = FontWeight.Bold) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.Red) },
+                                onClick = {
+                                    userMenuExpanded = false
+                                    // 3️⃣ Ejecutamos la función que limpia el DataStore
+                                    loginViewModel.cerrarSesion {
+                                        onLogoutSuccess() // Avisa que ya borró todo y navega al Login
+                                    }
+                                }
+                            )
                         }
                     }
                 },
@@ -97,7 +116,6 @@ fun MainScreen(userRole: String = "ADMIN") {
                     productoGlance = selectedProducto ?: ProductoModel("", "No seleccionado", "", "", ""),
                     viewModel = inventarioViewModel
                 )
-                // ENLACE ACTUALIZADO
                 Screen.Ubicar -> UbicarScreen(
                     viewModel = ubicarViewModel,
                     onNavigateToMapa = { currentScreen = Screen.MapaRack }

@@ -77,9 +77,6 @@ class LoteViewModel : ViewModel() {
     fun recibirLoteEnRampa(loteId: Int, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
-                // Asegúrate de que tu interfaz Retrofit tenga este método declarado:
-                // @PUT("lotes/{id}/recibir")
-                // suspend fun recibirLote(@Path("id") id: Int): Response<JsonObject>
 
                 val response = RetrofitClient.apiService.recibirLote(loteId)
 

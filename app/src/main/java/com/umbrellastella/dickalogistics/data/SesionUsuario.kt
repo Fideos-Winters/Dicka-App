@@ -14,3 +14,5 @@ data class UbicacionRecomendadaModel(
     @SerializedName("nivel") val nivel: Int? = null,
     @SerializedName("posicion") val posicion: Int? = null
 )
+
+//aqui no deberia estar esto

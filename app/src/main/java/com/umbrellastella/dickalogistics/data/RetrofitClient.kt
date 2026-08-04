@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val USAR_LOCAL = true
+    private const val USAR_LOCAL = false
     private const val URL_LOCAL = "http://10.0.2.2:8000/"
     private const val URL_EQUIPO = "http://3.15.238.37"
     private val BASE_URL = if (USAR_LOCAL) URL_LOCAL else URL_EQUIPO
