@@ -134,8 +134,7 @@ fun DesgloseLotesScreen(
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Estado: ${lote.ubicacion}",
-                                    color = if (lote.ubicacion.lowercase() == "ubicado") Color(0xFF4ADE80) else Color(0xFFF87171),
-                                    fontSize = 12.sp,
+                                    color = if (lote.ubicacion?.lowercase() == "ubicado") Color(0xFF4ADE80) else Color(0xFFF87171),                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }

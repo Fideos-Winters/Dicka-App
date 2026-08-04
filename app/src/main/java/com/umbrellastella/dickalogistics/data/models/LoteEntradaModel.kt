@@ -12,9 +12,11 @@ data class LoteEntradaModel(
     @SerializedName("numPalets") val numPalets: Int,
     @SerializedName("piezasPalet") val piezasPalet: Int,
     @SerializedName("unidadMedida") val unidadMedida: String,
+    @SerializedName("operador") val operador: String,
+    @SerializedName("lt") val lt: String,
+    @SerializedName("placas") val placas: String,
     @SerializedName("observaciones") val observaciones: String?,
     @SerializedName("ubi") val ubi: String = "No Ubicado",
-    // Asegurar que esta propiedad esté declarada exactamente así:
     @SerializedName("producto") val productoRelacion: ProductoRelacionModel? = null
 )
 

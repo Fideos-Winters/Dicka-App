@@ -52,6 +52,11 @@ fun UbicarScreen(
     var loteScanneado by remember { mutableStateOf<QrLoteModel?>(null) }
     var showBottomSheetRecomendacionesQr by remember { mutableStateOf(false) }
 
+    // Variables para la ubicación existente
+    var showDialogUbicacionExistente by remember { mutableStateOf(false) }
+    var ubicacionEncontrada by remember { mutableStateOf("") }
+    var showDialogLotePendiente by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -66,7 +71,7 @@ fun UbicarScreen(
         onResult = { granted -> hasCameraPermission = granted }
     )
 
-// Cargamos los lotes al iniciar la pantalla
+    // Cargamos los lotes al iniciar la pantalla
     LaunchedEffect(Unit) {
         viewModel.cargarLotes(reset = true)
     }
@@ -259,14 +264,40 @@ fun UbicarScreen(
                                                     loteScanneado = qrData
                                                     showCameraDialog = false
 
-                                                    val targetId = qrData.lot?.toIntOrNull()
-                                                        ?: extraeIdNumericoDeString(qrData.lot)
+                                                    val loteId = qrData.loteId
 
-                                                    if (targetId != null) {
-                                                        viewModel.cargarRecomendaciones(targetId)
+                                                    if (loteId != null && loteId > 0) {
+                                                        // 🟢 Consultamos el estado real al servidor mediante el ID del QR
+                                                        viewModel.verificarEstatusLote(loteId) { estadoRealServidor ->
+                                                            val esPendiente = estadoRealServidor.equals("Pendiente", ignoreCase = true)
+
+                                                            val estaUbicado = !estadoRealServidor.isNullOrEmpty() &&
+                                                                    !estadoRealServidor.equals("SIN UBICAR", ignoreCase = true) &&
+                                                                    !estadoRealServidor.equals("No Ubicado", ignoreCase = true) &&
+                                                                    !estadoRealServidor.equals("Pendiente", ignoreCase = true) &&
+                                                                    !estadoRealServidor.equals("null", ignoreCase = true)
+
+                                                            if (estaUbicado) {
+                                                                ubicacionEncontrada = estadoRealServidor
+                                                                showBottomSheetRecomendacionesQr = false
+                                                                showDialogUbicacionExistente = true
+                                                                showDialogLotePendiente = false
+                                                            } else if (esPendiente) {
+                                                                // 🟡 Laravel confirma que sigue pendiente en rampa
+                                                                showBottomSheetRecomendacionesQr = false
+                                                                showDialogUbicacionExistente = false
+                                                                showDialogLotePendiente = true
+                                                            } else {
+                                                                // 🔴 Laravel confirma que ya es "No Ubicado", listo para acomodar
+                                                                viewModel.cargarRecomendaciones(loteId)
+                                                                showDialogUbicacionExistente = false
+                                                                showBottomSheetRecomendacionesQr = true
+                                                                showDialogLotePendiente = false
+                                                            }
+                                                        }
+                                                    } else {
+                                                        android.widget.Toast.makeText(context, "Error al leer ID del lote del QR", android.widget.Toast.LENGTH_SHORT).show()
                                                     }
-
-                                                    showBottomSheetRecomendacionesQr = true
                                                 }
                                             }
                                         )
@@ -386,9 +417,9 @@ fun UbicarScreen(
                                     Button(
                                         onClick = {
                                             val tempLote = LoteUbicacionModel(
-                                                id = loteScanneado?.lot?.toIntOrNull() ?: 0,
+                                                id = loteScanneado?.loteId ?: 0,
                                                 qrUbicacion = null,
-                                                loteId = loteScanneado?.lot?.toIntOrNull(),
+                                                loteId = loteScanneado?.loteId,
                                                 palletNumero = loteScanneado?.palletNumero ?: 1
                                             )
                                             viewModel.asignarUbicacion(
@@ -407,6 +438,64 @@ fun UbicarScreen(
                     }
                 }
             }
+        }
+
+        // ================= DIÁLOGO LOTE YA UBICADO =================
+        if (showDialogUbicacionExistente && loteScanneado != null) {
+            AlertDialog(
+                onDismissRequest = { showDialogUbicacionExistente = false },
+                title = {
+                    Text(
+                        text = "Lote ya ubicado",
+                        fontWeight = FontWeight.Bold,
+                        color = DickaBlue
+                    )
+                },
+                text = {
+                    Text(
+                        text = "El lote ${loteScanneado?.lot} del producto ${loteScanneado?.producto ?: ""} ya se encuentra descansando en la ubicación:\n\n📍 $ubicacionEncontrada",
+                        fontSize = 15.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showDialogUbicacionExistente = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = DickaOrange)
+                    ) {
+                        Text("Entendido", color = Color.White)
+                    }
+                },
+                containerColor = Color.White
+            )
+        }
+
+        // ================= DIÁLOGO LOTE PENDIENTE (RESTRICCIÓN) =================
+        if (showDialogLotePendiente && loteScanneado != null) {
+            AlertDialog(
+                onDismissRequest = { showDialogLotePendiente = false },
+                title = {
+                    Text(
+                        text = "Lote no registrado en entrada",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFEAB308)
+                    )
+                },
+                text = {
+                    Text(
+                        text = "El lote ${loteScanneado?.lot} todavía está pendiente de registrar.\n\nPor favor, escanéalo primero en el apartado de Entradas para marcarlo como recibido antes de ubicarlo en un rack.",
+                        fontSize = 15.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showDialogLotePendiente = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = DickaBlue)
+                    ) {
+                        Text("Entendido", color = Color.White)
+                    }
+                },
+                containerColor = Color.White
+            )
         }
     }
 }
@@ -527,12 +616,4 @@ fun ItemLote(
             }
         }
     }
-}
-
-fun extraeIdNumericoDeString(texto: String?): Int? {
-    if (texto.isNullOrEmpty()) return null
-    return runCatching {
-        val soloNumeros = texto.split("_", "-").lastOrNull()
-        soloNumeros?.toIntOrNull()
-    }.getOrNull()
 }

@@ -1,7 +1,13 @@
 package com.umbrellastella.dickalogistics.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,7 +15,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
@@ -23,9 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.umbrellastella.dickalogistics.components.QrCodeAnalyzer
 import com.umbrellastella.dickalogistics.data.models.LoteEntradaModel
 import com.umbrellastella.dickalogistics.ui.theme.DickaBlue
+import com.umbrellastella.dickalogistics.ui.theme.DickaOrange
 import com.umbrellastella.dickalogistics.ui.viewmodels.LoteUiState
 import com.umbrellastella.dickalogistics.ui.viewmodels.LoteViewModel
 import com.umbrellastella.dickalogistics.utils.PrintHelper
@@ -50,21 +65,60 @@ fun EntradaLotesScreen(
     var mostrarFormulario by remember { mutableStateOf(false) }
     var loteAEditar by remember { mutableStateOf<LoteEntradaModel?>(null) }
 
+
+
+
+// Agrega estos estados al inicio de EntradaLotesScreen junto a los demás
+    var showCameraDialog by remember { mutableStateOf(false) }
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val launcherPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> hasCameraPermission = granted }
+    )
+
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    loteAEditar = null
-                    mostrarFormulario = true
-                },
-                containerColor = DickaBlue,
-                contentColor = DickaWhite,
-                shape = RoundedCornerShape(16.dp)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar Lote", modifier = Modifier.size(28.dp))
+                // 📸 NUEVO BOTÓN: Escanear Recepción
+                FloatingActionButton(
+                    onClick = {
+                        if (hasCameraPermission) {
+                            showCameraDialog = true
+                        } else {
+                            launcherPermission.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    containerColor = DickaOrange, // Usamos naranja para diferenciarlo
+                    contentColor = DickaWhite,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.QrCodeScanner, contentDescription = "Recibir Lote", modifier = Modifier.size(28.dp))
+                }
+
+                // BOTÓN EXISTENTE: Agregar Lote Manual
+                FloatingActionButton(
+                    onClick = {
+                        loteAEditar = null
+                        mostrarFormulario = true
+                    },
+                    containerColor = DickaBlue,
+                    contentColor = DickaWhite,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar Lote", modifier = Modifier.size(28.dp))
+                }
             }
         }
     ) { innerPadding ->
+        // ... (El resto del código de tu Column principal se queda IGUAL)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -230,6 +284,96 @@ fun EntradaLotesScreen(
             )
         }
     }
+
+    // ================= DIÁLOGO CÁMARA (Lector QR para Recepción) =================
+    if (showCameraDialog) {
+        Dialog(
+            onDismissRequest = { showCameraDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                val lifecycleOwner = LocalLifecycleOwner.current
+
+                AndroidView(
+                    factory = { ctx ->
+                        val previewView = PreviewView(ctx)
+                        val cameraProviderFuture = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(ctx)
+
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = androidx.camera.core.Preview.Builder().build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
+
+                            val imageAnalysis = androidx.camera.core.ImageAnalysis.Builder()
+                                .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                .build().also {
+                                    it.setAnalyzer(
+                                        ContextCompat.getMainExecutor(ctx),
+                                        QrCodeAnalyzer { textoQr ->
+                                            val qrData = parsearQrJson(textoQr)
+                                            if (qrData != null) {
+                                                showCameraDialog = false
+
+                                                // 🟢 LEEMOS DIRECTAMENTE EL ID DEL LOTE DEL JSON
+                                                val loteId = qrData.loteId
+
+                                                if (loteId != null && loteId > 0) {
+                                                    // Mandamos llamar a la API para registrar/recibir el lote en rampa
+                                                    viewModel.recibirLoteEnRampa(loteId) { exito, mensaje ->
+                                                        if (exito) {
+                                                            Toast.makeText(context, "✅ Lote registrado en el sistema. Ya está pendiente por ubicar.", Toast.LENGTH_LONG).show()
+                                                            viewModel.cargarLotes() // Recargar la lista
+                                                        } else {
+                                                            Toast.makeText(context, "❌ $mensaje", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+                                                } else {
+                                                    Toast.makeText(context, "Error al leer ID del lote del QR", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+
+                            try {
+                                cameraProvider.unbindAll()
+                                cameraProvider.bindToLifecycle(
+                                    lifecycleOwner,
+                                    androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA,
+                                    preview,
+                                    imageAnalysis
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }, ContextCompat.getMainExecutor(ctx))
+
+                        previewView
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(260.dp)
+                        .align(Alignment.Center)
+                        .border(3.dp, DickaOrange, RoundedCornerShape(16.dp))
+                )
+
+                IconButton(
+                    onClick = { showCameraDialog = false },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White)
+                }
+            }
+        }
+    }
+
+
 }
 
 @Composable

@@ -33,6 +33,7 @@ data class LoteDetalle(
 // 5. LoteUbicacionModel
 data class LoteUbicacionModel(
     @SerializedName("id") val id: Int,
+
     @SerializedName("qr_ubicacion", alternate = ["ubi", "ubicacion"]) val qrUbicacion: String?,
     @SerializedName("lote_id") val loteId: Int?,
     @SerializedName("pallet_numero", alternate = ["num_pallet"]) val palletNumero: Int?,

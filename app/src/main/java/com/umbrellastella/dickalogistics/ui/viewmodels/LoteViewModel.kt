@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.umbrellastella.dickalogistics.data.DickaApiService
+import com.umbrellastella.dickalogistics.data.RetrofitClient
 import kotlinx.coroutines.launch
 import okhttp3.ResponseBody
 sealed interface LoteUiState {
@@ -71,6 +72,31 @@ class LoteViewModel : ViewModel() {
             val resultado = repositorio.descargarEtiquetaPdf(loteId)
             // Devolvemos el PDF (o null si falló) a la pantalla
             onComplete(resultado.getOrNull())
+        }
+    }
+    fun recibirLoteEnRampa(loteId: Int, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Asegúrate de que tu interfaz Retrofit tenga este método declarado:
+                // @PUT("lotes/{id}/recibir")
+                // suspend fun recibirLote(@Path("id") id: Int): Response<JsonObject>
+
+                val response = RetrofitClient.apiService.recibirLote(loteId)
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val mensaje = body?.get("message")?.asString ?: "Lote recibido con éxito"
+
+                    // Recargamos la lista de lotes en la pantalla de entradas
+                    cargarLotes()
+
+                    onResult(true, mensaje)
+                } else {
+                    onResult(false, "Error del servidor: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onResult(false, "Excepción de red: ${e.localizedMessage ?: "Desconocido"}")
+            }
         }
     }
 

@@ -23,7 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.umbrellastella.dickalogistics.data.models.LoteEntradaModel
-import com.umbrellastella.dickalogistics.data.models.ProductoResponse // Import del modelo real
+import com.umbrellastella.dickalogistics.data.models.ProductoResponse
 import com.umbrellastella.dickalogistics.ui.theme.DickaBlue
 
 private val DickaWhite = Color(0xFFFFFFFF)
@@ -33,7 +33,7 @@ private val TextSecondary = Color(0xFF64748B)
 @Composable
 fun FormularioLoteBottomSheet(
     loteAEditar: LoteEntradaModel? = null,
-    listaProductos: List<ProductoResponse> = emptyList(), // Conectado a productoViewModel.listaCompletaProductos
+    listaProductos: List<ProductoResponse> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (LoteEntradaModel) -> Unit
 ) {
@@ -52,6 +52,9 @@ fun FormularioLoteBottomSheet(
     var piezasPalet by remember { mutableStateOf(loteAEditar?.piezasPalet?.toString() ?: "") }
     var unidadMedida by remember { mutableStateOf(loteAEditar?.unidadMedida ?: "Pzas") }
     var observaciones by remember { mutableStateOf(loteAEditar?.observaciones ?: "") }
+    var operador by remember { mutableStateOf(loteAEditar?.operador ?: "") }
+    var lt by remember { mutableStateOf(loteAEditar?.lt ?: "") }
+    var placas by remember { mutableStateOf(loteAEditar?.placas ?: "") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -75,6 +78,7 @@ fun FormularioLoteBottomSheet(
 
             HorizontalDivider(color = Color(0xFFE2E8F0))
 
+            // 1. Folio
             OutlinedTextField(
                 value = folio,
                 onValueChange = { folio = it },
@@ -83,32 +87,31 @@ fun FormularioLoteBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // --- 🔍 SELECTOR VISUAL DE PRODUCTO EN LUGAR DE ID NUMÉRICO ---
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = if (selectedProductoNombre.isNotEmpty()) selectedProductoNombre else "Seleccionar Producto...",
-                    onValueChange = {},
-                    readOnly = true,
-                    enabled = false, // Deshabilitado para obligar clic y abrir el sub-menú flotante
-                    label = { Text("Producto Seleccionado", color = DickaBlue) },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = if (mostrarBuscadorProductos) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = "Desplegar Catálogo",
-                            tint = DickaBlue
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = if (selectedProductoId != null) DickaBlue else Color(0xFFCBD5E1),
-                        disabledTextColor = if (selectedProductoId != null) Color.Black else TextSecondary,
-                        disabledLabelColor = DickaBlue
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { mostrarBuscadorProductos = true }
-                )
-            }
+            // 2. Selector de Producto (Corregido y cerrado de forma limpia)
+            OutlinedTextField(
+                value = if (selectedProductoNombre.isNotEmpty()) selectedProductoNombre else "Seleccionar Producto...",
+                onValueChange = {},
+                readOnly = true,
+                enabled = false,
+                label = { Text("Producto Seleccionado", color = DickaBlue) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = if (mostrarBuscadorProductos) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                        contentDescription = "Desplegar Catálogo",
+                        tint = DickaBlue
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = if (selectedProductoId != null) DickaBlue else Color(0xFFCBD5E1),
+                    disabledTextColor = if (selectedProductoId != null) Color.Black else TextSecondary,
+                    disabledLabelColor = DickaBlue
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { mostrarBuscadorProductos = true }
+            )
 
+            // 3. Código Lote
             OutlinedTextField(
                 value = loteCodigo,
                 onValueChange = { loteCodigo = it },
@@ -116,6 +119,7 @@ fun FormularioLoteBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // 4. Fecha Caducidad
             OutlinedTextField(
                 value = caducidad,
                 onValueChange = { caducidad = it },
@@ -123,6 +127,7 @@ fun FormularioLoteBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // 5. Pallets y Piezas (En fila)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = numPalets,
@@ -140,6 +145,31 @@ fun FormularioLoteBottomSheet(
                 )
             }
 
+            // 6. Operador (Campo Individual)
+            OutlinedTextField(
+                value = operador,
+                onValueChange = { operador = it },
+                label = { Text("Operador") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // 7. LT y Placas (En fila)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = lt,
+                    onValueChange = { lt = it },
+                    label = { Text("LT") },
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = placas,
+                    onValueChange = { placas = it },
+                    label = { Text("Placas") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 8. Unidad de Medida
             OutlinedTextField(
                 value = unidadMedida,
                 onValueChange = { unidadMedida = it },
@@ -147,6 +177,7 @@ fun FormularioLoteBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // 9. Observaciones
             OutlinedTextField(
                 value = observaciones,
                 onValueChange = { observaciones = it },
@@ -157,6 +188,7 @@ fun FormularioLoteBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // 10. Botón de Guardar
             Button(
                 onClick = {
                     if (selectedProductoId != null) {
@@ -171,13 +203,16 @@ fun FormularioLoteBottomSheet(
                                 numPalets = numPalets.toIntOrNull() ?: 0,
                                 piezasPalet = piezasPalet.toIntOrNull() ?: 0,
                                 unidadMedida = unidadMedida,
+                                operador = operador,
+                                lt = lt,
+                                placas = placas,
                                 observaciones = observaciones.ifBlank { null },
                                 ubi = loteAEditar?.ubi ?: "No Ubicado"
                             )
                         )
                     }
                 },
-                enabled = selectedProductoId != null, // Se activa hasta elegir producto
+                enabled = selectedProductoId != null,
                 colors = ButtonDefaults.buttonColors(containerColor = DickaBlue),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -216,7 +251,6 @@ fun DialogBuscadorProductos(
 ) {
     var filtroBusqueda by remember { mutableStateOf("") }
 
-    // Filtrado en tiempo real dentro del sub-menú
     val productosFiltrados = remember(filtroBusqueda, listaProductos) {
         if (filtroBusqueda.isBlank()) {
             listaProductos
@@ -254,7 +288,6 @@ fun DialogBuscadorProductos(
                     .fillMaxWidth()
                     .height(350.dp)
             ) {
-                // Barra de Búsqueda
                 OutlinedTextField(
                     value = filtroBusqueda,
                     onValueChange = { filtroBusqueda = it },

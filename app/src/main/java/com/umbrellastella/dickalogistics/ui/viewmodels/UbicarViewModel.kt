@@ -3,6 +3,8 @@ package com.umbrellastella.dickalogistics.viewmodel
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.umbrellastella.dickalogistics.data.RetrofitClient
+import com.umbrellastella.dickalogistics.data.models.LoteDetalleModel
 import com.umbrellastella.dickalogistics.data.models.LoteUbicacionModel
 import com.umbrellastella.dickalogistics.data.repositories.UbicarRepository
 import kotlinx.coroutines.launch
@@ -133,6 +135,29 @@ class UbicarViewModel : ViewModel() {
                     cargarLotes(reset = true)
                 }
                 isLoading = false
+            }
+        }
+    }
+
+    fun verificarEstatusLote(loteId: Int, onResultado: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.detalleLote(loteId)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val detalle = response.body()!!
+
+                    // 🟢 AQUÍ ESTÁ EL TRUCO:
+                    // Imprimimos en el Logcat qué estatus exacto nos mandó Laravel para este ID
+                    val estadoServidor = detalle.ubicacion ?: "Pendiente"
+                    android.util.Log.d("ESTATUS_API", "🔍 Estado real devuelto por Laravel para ID $loteId: $estadoServidor")
+
+                    onResultado(estadoServidor)
+                } else {
+                    onResultado("Pendiente")
+                }
+            } catch (e: Exception) {
+                onResultado("Pendiente")
             }
         }
     }

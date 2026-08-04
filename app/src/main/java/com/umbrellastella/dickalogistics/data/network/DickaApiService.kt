@@ -32,23 +32,25 @@ interface DickaApiService {
     suspend fun guardarLote(@Body request: LoteEntradaModel): Response<Map<String, Any>>
 
     @PUT("api/lotes/{id}")
-    suspend fun actualizarLote(@Path("id") id: Int, @Body request: LoteEntradaModel): Response<Map<String, Any>>
+    suspend fun actualizarLote(
+        @Path("id") id: Int,
+        @Body request: LoteEntradaModel
+    ): Response<Map<String, Any>>
 
     // Ubicaciones (Lógica de Ubicar)
 //    @GET("api/lote-ubicaciones/filtrar")
 //    suspend fun filtrarLotes(@Query("lote") lote: String? = null, @Query("folio") folio: Int? = null): Response<Map<String, List<LoteUbicacionModel>>>
 
-//    @GET("api/lotes/{id}/recomendar")
+    //    @GET("api/lotes/{id}/recomendar")
 //    suspend fun recomendarUbicaciones(@Path("id") loteId: Int): Response<List<String>>
-@GET("api/lotes/{id}/recomendar")
-suspend fun recomendarUbicaciones(@Path("id") loteId: Int): Response<RecomendacionResponse>
+    @GET("api/lotes/{id}/recomendar")
+    suspend fun recomendarUbicaciones(@Path("id") loteId: Int): Response<RecomendacionResponse>
 
 
-
-//    @POST("api/registrar-ubicacion")
+    //    @POST("api/registrar-ubicacion")
 //    suspend fun registrarUbicacion(@Body request: Map<String, Any>): Response<Map<String, Any>>
-@POST("api/registrar-ubicacion")
-suspend fun registrarUbicacion(@Body request: RegistrarUbicacionRequest): Response<Map<String, Any>>
+    @POST("api/registrar-ubicacion")
+    suspend fun registrarUbicacion(@Body request: RegistrarUbicacionRequest): Response<Map<String, Any>>
 
 
     @PUT("api/lotes/{id}/terminado")
@@ -65,7 +67,10 @@ suspend fun registrarUbicacion(@Body request: RegistrarUbicacionRequest): Respon
     suspend fun registrarProducto(@Body request: ProductoFormState): Response<Map<String, Any>>
 
     @PUT("api/productos/{id}")
-    suspend fun actualizarProducto(@Path("id") id: Int, @Body request: ProductoFormState): Response<Map<String, Any>>
+    suspend fun actualizarProducto(
+        @Path("id") id: Int,
+        @Body request: ProductoFormState
+    ): Response<Map<String, Any>>
 
     @DELETE("api/productos/{id}")
     suspend fun eliminarProducto(@Path("id") id: Int): Response<Map<String, Any>>
@@ -81,7 +86,10 @@ suspend fun registrarUbicacion(@Body request: RegistrarUbicacionRequest): Respon
     suspend fun registrarCliente(@Body request: ClienteFormState): Response<Map<String, Any>>
 
     @PUT("api/clientes/{id}")
-    suspend fun actualizarCliente(@Path("id") id: Int, @Body request: ClienteFormState): Response<Map<String, Any>>
+    suspend fun actualizarCliente(
+        @Path("id") id: Int,
+        @Body request: ClienteFormState
+    ): Response<Map<String, Any>>
 
     @DELETE("api/clientes/{id}")
     suspend fun eliminarCliente(@Path("id") id: Int): Response<Map<String, Any>>
@@ -121,4 +129,11 @@ suspend fun registrarUbicacion(@Body request: RegistrarUbicacionRequest): Respon
     @Streaming // <-- Evita que la app se quede sin memoria (OutOfMemory)
     @GET("api/lotes/{id}/imprimir-etiquetas") // <-- Asegúrate de que la ruta coincida con Laravel (¿lleva /api/ al principio?)
     suspend fun descargarEtiquetasPdf(@Path("id") loteId: Int): Response<ResponseBody>
+
+    @PUT("api/lotes/{id}/recibir")
+    suspend fun recibirLote(@Path("id") id: Int): Response<com.google.gson.JsonObject>
+
+    @GET("api/lotes/{id}")
+    suspend fun detalleLote(@Path("id") id: Int): Response<LoteDetalleModel>
+
 }

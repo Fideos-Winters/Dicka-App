@@ -1,5 +1,6 @@
 package com.umbrellastella.dickalogistics.components
 
+import android.util.Log // 👈 Asegúrate de importar Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -27,6 +28,9 @@ class QrCodeAnalyzer(
                 .addOnSuccessListener { barcodes ->
                     for (barcode in barcodes) {
                         barcode.rawValue?.let { qrValue ->
+                            // 🟢 IMPRIMIR EL TEXTO DEL QR EN EL LOGCAT
+                            Log.d("QR_DEBUG", "🔍 Código QR leído con éxito: $qrValue")
+
                             isScanComplete = true
                             onQrDetectado(qrValue)
                             break
